@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Input from '../UI/Input.jsx';
 import Button from '../UI/Button.jsx';
 import Modal from '../UI/Modal.jsx'; 
@@ -6,6 +6,7 @@ import { findUserByEmail, getCurrentUser } from '../../services/authService.js';
 import { addBooking, editBooking } from '../../services/bookingsService.js';
 
 const initialFormData = {
+    roomId: null,
     date: '',
     startTime: '09:00',
     endTime: '10:00',
@@ -17,27 +18,37 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
     
     const isEditMode = !!initialData; 
 
+    const currentUser = useMemo(() => getCurrentUser(), [isOpen]); 
+
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [newParticipantEmail, setNewParticipantEmail] = useState('');
-    const [isChanged, setChanged] = useState(false);
-    const currentUser = getCurrentUser();
+    const [isChanged, setChanged] = useState(false); 
     
     useEffect(() => {
-        if (isOpen) {
-            if (isEditMode && !isChanged) {
+        if (isOpen && !isChanged) {
+            if (isEditMode) {
                 setFormData(initialData);
-            } else if(!isChanged){
+            } else {
                 setFormData({
                     ...initialFormData, 
-                    roomId: room.id,
-                    participants: currentUser ? [{ email: currentUser.email, role: currentUser.role, name: currentUser.name }] : [],
+                    roomId: room?.id,
+                    participants: currentUser ? [{ 
+                        id: currentUser.id, 
+                        email: currentUser.email, 
+                        role: currentUser.role, 
+                        name: currentUser.name 
+                    }] : [],
                 });
             }
         }
-    }, [isOpen, initialData, room, currentUser, isEditMode, isChanged]);
-
+        
+        if (!isOpen) {
+            setChanged(false);
+            setError('');
+        }
+    }, [isOpen, initialData, room, currentUser, isEditMode]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -59,14 +70,14 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
             return;
         }
         
-        const user = findUserByEmail(email); 
+        const user = findUserByEmail(email);
 
         if (!user) {
              setError('Користувач з таким email не зареєстрований.');
              return;
         }
 
-        const newParticipant = { email: user.email, role: user.role, name: user.name }; 
+        const newParticipant = { id: user.id, email: user.email, role: user.role, name: user.name }; 
         setFormData(prev => ({ 
             ...prev, 
             participants: [...prev.participants, newParticipant] 
@@ -77,11 +88,13 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
     };
 
     const handleRemoveParticipant = (emailToRemove) => {
-        setChanged(true);
         if (currentUser && emailToRemove === currentUser.email) {
             setError('Ви не можете видалити себе із зустрічі.');
             return;
         }
+        
+        setChanged(true); 
+        
         setFormData(prev => ({
             ...prev,
             participants: prev.participants.filter(p => p.email !== emailToRemove)
@@ -126,7 +139,10 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
     return (
         <Modal 
             isOpen={isOpen} 
-            onClose={onClose} 
+            onClose={() => {
+                setChanged(false);
+                onClose();
+            }} 
             title={isEditMode ? "Редагувати Бронювання" : `Бронювання: ${room?.name || ''}`}
         >
             <form onSubmit={handleSubmit}>
@@ -169,7 +185,7 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
                 
                 <div style={{ fontSize: '0.9em', border: '1px solid #eee', padding: '10px', borderRadius: '4px' }}>
                     {formData.participants.map(p => (
-                        <div key={p.email} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', padding: '3px 0' }}>
+                        <div key={p.id || p.email} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', padding: '3px 0' }}>
                             <span>{p.name} ({p.role})</span>
                             {(!currentUser || p.email !== currentUser.email) && (
                                 <span onClick={() => handleRemoveParticipant(p.email)} style={{ color: 'red', cursor: 'pointer', fontWeight: 'bold' }}>

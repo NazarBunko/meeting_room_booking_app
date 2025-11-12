@@ -5,15 +5,20 @@ import LoginPage from './pages/Auth/LoginPage.jsx';
 import RegistrationPage from './pages/Auth/RegistrationPage.jsx';
 import RoomListPage from './pages/Room/RoomListPage.jsx'; 
 import UsersPage from './pages/Info/UsersPage.jsx';
+import BookingListPage from './pages/Booking/BookingListPage.jsx';
 
 import { getCurrentUserToken } from './services/authService.js';
-import BookingListPage from './pages/Booking/BookingListPage.jsx';
 
 const isLoggedIn = () => !!getCurrentUserToken();
 
 const ProtectedRoute = ({ element }) => {
     return isLoggedIn() ? element : <Navigate to="/login" replace />;
 };
+
+const AuthRedirectIfLoggedIn = ({ element }) => {
+    return isLoggedIn() ? <Navigate to="/rooms" replace /> : element;
+};
+
 
 function App() {
   return (
@@ -27,11 +32,11 @@ function App() {
 
         <Route 
           path="/login" 
-          element={isLoggedIn() ? <Navigate to="/rooms" replace /> : <LoginPage />} 
+          element={<AuthRedirectIfLoggedIn element={<LoginPage />} />} 
         />
         <Route 
           path="/register" 
-          element={isLoggedIn() ? <Navigate to="/rooms" replace /> : <RegistrationPage />} 
+          element={<AuthRedirectIfLoggedIn element={<RegistrationPage />} />} 
         />
 
         <Route path="/users" element={<ProtectedRoute element={<UsersPage />} />} />

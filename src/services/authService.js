@@ -14,6 +14,14 @@ export const findUserByEmail = (email) => {
     return users.find(u => u.email === email);
 };
 
+const generateNextUserId = (users) => {
+    if (users.length === 0) {
+        return 1;
+    }
+    const maxId = users.reduce((max, user) => (user.id > max ? user.id : max), 0);
+    return maxId + 1;
+};
+
 export const getCurrentUser = () => {
     const token = getCurrentUserToken();
     if (!token) return null;
@@ -22,25 +30,26 @@ export const getCurrentUser = () => {
     const user = findUserByEmail(email); 
     
     if (user) {
-        return { name: user.name, email: user.email, role: user.role };
+        return { id: user.id, name: user.name, email: user.email, role: user.role };
     }
     
     return null; 
 };
 
 export const registerUser = ({ name, email, password }) => {
+    const users = loadUsers();
     if (findUserByEmail(email)) {
         return { success: false, message: 'Користувач з таким email вже існує.' };
     }
 
     const newUser = { 
+        id: generateNextUserId(users),
         name, 
         email, 
         password, 
         role: 'User'
     };
 
-    const users = loadUsers();
     saveUsers([...users, newUser]);
     
     return { success: true, user: newUser };
@@ -52,7 +61,7 @@ export const loginUser = (email, password) => {
     if (user && user.password === password) {
         const fakeToken = `token-${user.email}-${Date.now()}`;
         localStorage.setItem(TOKEN_KEY, fakeToken);
-        return { success: true, user: { email: user.email, name: user.name, role: user.role } };
+        return { success: true, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
     }
     
     return { success: false, message: 'Неправильний email або пароль.' };
@@ -70,6 +79,7 @@ export const getCurrentUserToken = () => {
     const users = loadUsers();
     if (users.length === 0) {
         const adminUser = {
+            id: 1,
             name: 'Admin',
             email: 'admin@app.com',
             password: 'admin',

@@ -19,7 +19,7 @@ function RoomCard({ room, onEdit, onDelete, onBook }) {
                         <Button onClick={() => onDelete(room.id)} style={{ background: 'red' }}>Видалити</Button>
                     </>
                 )}
-                <Button onClick={() => onBook(room.id)} style={{ background: '#1AB394' }}>Забронювати</Button>
+                <Button onClick={() => onBook(room)} style={{ background: '#1AB394' }}>Забронювати</Button>
             </div>
         </div>
     );

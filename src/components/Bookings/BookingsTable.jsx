@@ -30,7 +30,7 @@ function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
             return;
         }
         
-        let result = joinBooking(bookingId, currentUser);
+        let result;
         if(isJoin){
             result = joinBooking(bookingId, currentUser);
         } else {
