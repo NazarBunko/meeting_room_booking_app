@@ -1,81 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import RoomCard from '../../components/Rooms/RoomCard.jsx';
 import Button from '../../components/UI/Button.jsx';
 import RoomModal from '../../components/Rooms/RoomModal.jsx';
 import BookingModal from '../../components/Bookings/BookingModal.jsx';
-import { fetchRooms, deleteRoom } from '../../services/roomsService.js';
-import { logoutUser, getCurrentUser } from '../../services/authService.js';
+import useRoomListActions from '../../hooks/useRoomListActions.js';
 import { useNavigate } from 'react-router-dom';
 import styles from './RoomListPage.module.css';
 
 function RoomListPage() {
-    const [rooms, setRooms] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    
-    const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
-    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-    
-    const [editingRoom, setEditingRoom] = useState(null);
-    const [selectedRoom, setSelectedRoom] = useState(null); 
-    
-    const [currentUser, setCurrentUser] = useState(null);
     const navigate = useNavigate();
-
-    const loadData = () => {
-        setIsLoading(true);
-        const user = getCurrentUser();
-        setCurrentUser(user);
-        
-        const loadedRooms = fetchRooms();
-        setRooms(loadedRooms);
-        setIsLoading(false);
-    };
-
-    useEffect(() => {
-        const timerId = setTimeout(() => {
-            loadData();
-        }, 500);
-
-        return () => clearTimeout(timerId);
-    }, []);
-
-    const handleAddRoom = () => {
-        setEditingRoom(null);
-        setIsRoomModalOpen(true);
-    };
-
-    const handleEditRoom = (roomData) => {
-        setEditingRoom(roomData);
-        setIsRoomModalOpen(true);
-    };
     
-    const handleSaveSuccess = () => {
-        setIsRoomModalOpen(false);
-        setIsBookingModalOpen(false);
-        loadData();
-    };
-    
-    const handleDeleteRoom = (id) => {
-        if (window.confirm("Ви впевнені, що хочете видалити цю кімнату?")) {
-            const result = deleteRoom(id);
-            if (result.success) {
-                alert("Кімнату видалено!");
-                loadData();
-            } else {
-                alert(result.message);
-            }
-        }
-    };
-
-    const handleOpenBookingModal = (room) => {
-        setSelectedRoom(room);
-        setIsBookingModalOpen(true);
-    };
-    
-    const handleLogout = () => {
-        logoutUser();
-        navigate('/login', { replace: true });
-    };
+    const {
+        rooms,
+        isLoading,
+        isRoomModalOpen,
+        isBookingModalOpen,
+        editingRoom,
+        selectedRoom,
+        currentUser,
+        setIsRoomModalOpen,
+        setIsBookingModalOpen,
+        handleAddRoom,
+        handleEditRoom,
+        handleSaveSuccess,
+        handleDeleteRoom,
+        handleOpenBookingModal,
+        handleLogout,
+        handleJoinRoom,
+    } = useRoomListActions();
 
     if (isLoading) {
         return <p style={{ textAlign: 'center', marginTop: '50px' }}>Завантаження кімнат...</p>;
@@ -111,7 +63,7 @@ function RoomListPage() {
                         room={room}
                         onEdit={handleEditRoom}
                         onDelete={handleDeleteRoom}
-                        onJoin={(id) => navigate(`/rooms/${id}`)}
+                        onJoin={() => handleJoinRoom(room.id)}
                         onBook={handleOpenBookingModal}
                     />
                 ))

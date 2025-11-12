@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../UI/Button';
 import BookingModal from './BookingModal';
-import { cancelBooking, joinBooking, leaveBooking } from '../../services/bookingsService';
+import useBookingActions from '../../hooks/useBookingActions';
 import { getCurrentUser } from '../../services/authService';
 
 function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
@@ -9,51 +9,19 @@ function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
     const [editingBooking, setEditingBooking] = useState(null);
     const currentUser = getCurrentUser();
 
-    const formatTime = (time) => time ? time.substring(0, 5) : 'N/A';
-
-    const handleEditBooking = (booking) => {
-        setEditingBooking(booking);
-        setIsBookingModalOpen(true);
-    };
-
-    const handleCancelBooking = (bookingId) => {
-        if (window.confirm("Ви впевнені, що хочете скасувати це бронювання?")) {
-            cancelBooking(bookingId);
-            alert("Бронювання скасовано.");
-            if (onDataUpdate) onDataUpdate();
-        }
-    };
-
-    const handleJoinBooking = (bookingId, isJoin) => {
-        if (!currentUser) {
-            alert("Помилка: не вдалося ідентифікувати користувача.");
-            return;
-        }
-        
-        let result;
-        if(isJoin){
-            result = joinBooking(bookingId, currentUser);
-        } else {
-            result = leaveBooking(bookingId, currentUser);
-        }
-        
-        if (result.success) {
-            alert(isJoin ? "Ви успішно долучились до зустрічі!" : "Ви успішно вийшли зі зустрічі!");
-            if (onDataUpdate) onDataUpdate();
-        } else {
-            alert(result.message);
-        }
-    };
-
-    const handleCloseModalAndUpdate = () => {
-        setIsBookingModalOpen(false);
-        if (onDataUpdate) onDataUpdate();
-    };
-    
-    const sortedBookings = [...bookings].sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.startTime}`);
-        const dateB = new Date(`${b.date}T${b.startTime}`);
-        return dateB - dateA; 
+    const { 
+        handleEditBooking, 
+        handleCancelBooking, 
+        handleJoinBooking, 
+        handleCloseModalAndUpdate,
+        formatTime,
+        sortedBookings
+    } = useBookingActions({
+        bookings,
+        currentUser,
+        setEditingBooking,
+        setIsBookingModalOpen,
+        onDataUpdate
     });
 
     return (
@@ -91,6 +59,21 @@ function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
                                         
                                         {currentUser?.role === "Admin" && (
                                             <>
+                                                {isParticipant ? (
+                                                        <Button 
+                                                            style={{ flex: 1, minWidth: '80px', padding: '5px', backgroundColor: '#a0a0a0ff' }} 
+                                                            onClick={() => handleJoinBooking(booking.id, false)}
+                                                        >
+                                                            Вийти
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                            style={{ flex: 1, minWidth: '80px', padding: '5px', backgroundColor: '#00c79fff' }} 
+                                                            onClick={() => handleJoinBooking(booking.id, true)}
+                                                        >
+                                                            Долучитись
+                                                        </Button>
+                                                    )}
                                                 <Button style={
                                                     { flex: 1, 
                                                     minWidth: '80px', 
@@ -104,22 +87,6 @@ function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
                                                     backgroundColor: '#dc3545' }
                                                     } 
                                                     onClick={() => handleCancelBooking(booking.id)}>Видалити</Button>
-                                                
-                                                {isParticipant ? (
-                                                    <Button 
-                                                        style={{ width: '100%', backgroundColor: '#a0a0a0ff' }} 
-                                                        onClick={() => handleJoinBooking(booking.id, false)}
-                                                    >
-                                                        Вийти
-                                                    </Button>
-                                                ) : (
-                                                    <Button 
-                                                        style={{ width: '100%', backgroundColor: '#00c79fff' }} 
-                                                        onClick={() => handleJoinBooking(booking.id, true)}
-                                                    >
-                                                        Долучитись
-                                                    </Button>
-                                                )}
                                             </>
                                         )}
                                         

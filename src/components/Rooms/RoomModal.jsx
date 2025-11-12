@@ -1,62 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Input from '../UI/Input.jsx';
 import Button from '../UI/Button.jsx';
 import Modal from '../UI/Modal.jsx'; 
-import { addRoom, editRoom } from '../../services/roomsService.js'; 
-
-const initialFormData = {
-    name: '',
-    description: '',
-};
+import useRoomModal from '../../hooks/useRoomModal.js';
 
 function RoomModal({ isOpen, onClose, initialData, onSaveSuccess }) {
-    const [formData, setFormData] = useState(initialData || initialFormData);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
     
-    useEffect(() => {
-        setFormData(initialData || initialFormData);
-        setError('');
-    }, [initialData, isOpen]);
-
-
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setError('');
-    };
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        const serviceFunc = initialData ? editRoom : addRoom;
-        
-        if (!formData.name || !formData.description) {
-            setError("Всі поля обов'язкові.");
-            setIsLoading(false);
-            return;
-        }
-
-        const result = serviceFunc(formData); 
-        
-        setTimeout(() => { 
-            setIsLoading(false);
-            if (result.success) {
-                onSaveSuccess(result.room);
-                onClose();
-            } else {
-                setError(result.message || "Невідома помилка збереження.");
-            }
-        }, 800);
-    };
+    const { 
+        formData,
+        isLoading,
+        error,
+        modalTitle,
+        handleChange,
+        handleSubmit
+    } = useRoomModal({ initialData, isOpen, onSaveSuccess, onClose });
+    
+    const isEditing = !!initialData;
 
     return (
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
-            title={initialData ? "Редагувати кімнату" : "Створити кімнату"}
+            title={modalTitle}
         >
             <form onSubmit={handleSubmit}>
                 
@@ -87,7 +52,7 @@ function RoomModal({ isOpen, onClose, initialData, onSaveSuccess }) {
                     loading={isLoading} 
                     style={{ marginTop: '20px' }}
                 >
-                    {initialData ? 'Зберегти зміни' : 'Створити'}
+                    {isEditing ? 'Зберегти зміни' : 'Створити'}
                 </Button>
                 
             </form>

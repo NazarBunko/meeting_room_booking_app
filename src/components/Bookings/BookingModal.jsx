@@ -1,131 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import Input from '../UI/Input.jsx';
 import Button from '../UI/Button.jsx';
 import Modal from '../UI/Modal.jsx'; 
-import { findUserByEmail, getCurrentUser } from '../../services/authService.js'; 
-import { addBooking, editBooking } from '../../services/bookingsService.js';
-
-const initialFormData = {
-    roomId: null,
-    date: '',
-    startTime: '09:00',
-    endTime: '10:00',
-    description: '',
-    participants: [],
-};
+import { useBookingForm } from '../../hooks/useBookingForm.js'; 
 
 function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) {
     
-    const isEditMode = !!initialData; 
-
-    const currentUser = useMemo(() => getCurrentUser(), [isOpen]); 
-
-    const [formData, setFormData] = useState(initialFormData);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [newParticipantEmail, setNewParticipantEmail] = useState('');
-    const [isChanged, setChanged] = useState(false); 
-    
-    useEffect(() => {
-        if (isOpen && !isChanged) {
-            if (isEditMode) {
-                setFormData(initialData);
-            } else {
-                setFormData({
-                    ...initialFormData, 
-                    roomId: room?.id,
-                    participants: currentUser ? [{ 
-                        id: currentUser.id, 
-                        email: currentUser.email, 
-                        role: currentUser.role, 
-                        name: currentUser.name 
-                    }] : [],
-                });
-            }
-        }
-        
-        if (!isOpen) {
-            setChanged(false);
-            setError('');
-        }
-    }, [isOpen, initialData, room, currentUser, isEditMode]);
-
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setChanged(true);
-        setError('');
-    };
-
-    const handleAddParticipant = () => {
-        const email = newParticipantEmail.trim();
-        
-        if (!email) {
-            setError('Введіть email.');
-            return;
-        }
-        
-        if (formData.participants.some(p => p.email === email)) {
-            setError('Цей учасник уже доданий.');
-            return;
-        }
-        
-        const user = findUserByEmail(email);
-
-        if (!user) {
-             setError('Користувач з таким email не зареєстрований.');
-             return;
-        }
-
-        const newParticipant = { id: user.id, email: user.email, role: user.role, name: user.name }; 
-        setFormData(prev => ({ 
-            ...prev, 
-            participants: [...prev.participants, newParticipant] 
-        }));
-        setNewParticipantEmail('');
-        setChanged(true);
-        setError('');
-    };
-
-    const handleRemoveParticipant = (emailToRemove) => {
-        if (currentUser && emailToRemove === currentUser.email) {
-            setError('Ви не можете видалити себе із зустрічі.');
-            return;
-        }
-        
-        setChanged(true); 
-        
-        setFormData(prev => ({
-            ...prev,
-            participants: prev.participants.filter(p => p.email !== emailToRemove)
-        }));
-    };
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        if (new Date(`2000/01/01 ${formData.endTime}`) <= new Date(`2000/01/01 ${formData.startTime}`)) {
-             setError("Час закінчення має бути пізнішим за час початку.");
-             setIsLoading(false);
-             return;
-        }
-        
-        const serviceFunc = isEditMode ? editBooking : addBooking;
-        const result = serviceFunc(formData);
-        
-        setTimeout(() => {
-            setIsLoading(false);
-            if (result.success) {
-                alert(`Бронювання ${isEditMode ? 'оновлено' : 'створено'} успішно.`);
-                onBookingSuccess();
-                onClose();
-            } else {
-                setError(result.message || "Помилка бронювання/конфлікт часу.");
-            }
-        }, 800);
-    };
+    const {
+        formData,
+        isLoading,
+        error,
+        newParticipantEmail,
+        isEditMode,
+        currentUser,
+        setNewParticipantEmail,
+        handleChange,
+        handleAddParticipant,
+        handleRemoveParticipant,
+        handleSubmit,
+    } = useBookingForm(isOpen, room, initialData, onBookingSuccess, onClose);
 
     const generateTimeOptions = () => {
         const options = [];
@@ -140,7 +33,6 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
         <Modal 
             isOpen={isOpen} 
             onClose={() => {
-                setChanged(false);
                 onClose();
             }} 
             title={isEditMode ? "Редагувати Бронювання" : `Бронювання: ${room?.name || ''}`}
