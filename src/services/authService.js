@@ -14,6 +14,20 @@ export const findUserByEmail = (email) => {
     return users.find(u => u.email === email);
 };
 
+export const getCurrentUser = () => {
+    const token = getCurrentUserToken();
+    if (!token) return null;
+    const parts = token.split('-');
+    const email = parts[1];
+    const user = findUserByEmail(email); 
+    
+    if (user) {
+        return { name: user.name, email: user.email, role: user.role };
+    }
+    
+    return null; 
+};
+
 export const registerUser = ({ name, email, password }) => {
     if (findUserByEmail(email)) {
         return { success: false, message: 'Користувач з таким email вже існує.' };

@@ -6,12 +6,12 @@ import RegistrationPage from './pages/Auth/RegistrationPage.jsx';
 import RoomListPage from './pages/Room/RoomListPage.jsx'; 
 import UsersPage from './pages/Info/UsersPage.jsx';
 
-import { getCurrentUserToken } from './services/authService.jsx'; 
+import { getCurrentUserToken } from './services/authService.js'; 
+import RoomDetailsPage from './pages/Room/RoomDetailsPage.jsx';
+import BookingListPage from './pages/Booking/BookingListPage.jsx';
 
-// Функція для перевірки статусу авторизації
 const isLoggedIn = () => !!getCurrentUserToken();
 
-// Компонент, що захищає маршрут
 const ProtectedRoute = ({ element }) => {
     return isLoggedIn() ? element : <Navigate to="/login" replace />;
 };
@@ -21,13 +21,11 @@ function App() {
     <Router>
       <Routes>
 
-        {/* Перенаправлення з кореневого маршруту залежно від статусу */}
         <Route 
           path="/" 
           element={<Navigate to={isLoggedIn() ? "/rooms" : "/login"} replace />} 
         />
 
-        {/* Маршрути авторизації: перенаправляють, якщо вже залогінений */}
         <Route 
           path="/login" 
           element={isLoggedIn() ? <Navigate to="/rooms" replace /> : <LoginPage />} 
@@ -37,9 +35,10 @@ function App() {
           element={isLoggedIn() ? <Navigate to="/rooms" replace /> : <RegistrationPage />} 
         />
 
-        {/* Захищені маршрути: доступні лише після логіну */}
         <Route path="/users" element={<ProtectedRoute element={<UsersPage />} />} />
+        <Route path="/bookings" element={<ProtectedRoute element={<BookingListPage />} />} />
         <Route path="/rooms" element={<ProtectedRoute element={<RoomListPage />} />} />
+        <Route path="/rooms/:roomId" element={<ProtectedRoute element={<RoomDetailsPage />} />} />
         
         <Route path="*" element={<h1>404: Сторінку не знайдено</h1>} />
 

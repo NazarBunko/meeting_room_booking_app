@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/UI/Input.jsx'; 
 import Button from '../../components/UI/Button.jsx';
-import { loginUser } from '../../services/authService.jsx';
+import { loginUser } from '../../services/authService.js';
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
