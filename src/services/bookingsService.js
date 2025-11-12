@@ -88,3 +88,62 @@ export const cancelBooking = (id) => {
     saveBookings(newBookings);
     return { success: true };
 };
+
+export const joinBooking = (bookingId, userToAdd) => {
+    const bookings = loadBookings();
+    
+    let targetBooking;
+    const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+
+    if (bookingIndex === -1) {
+        return { success: false, message: 'Бронювання не знайдено.' };
+    }
+    
+    targetBooking = bookings[bookingIndex];
+
+    if (targetBooking.participants.some(p => p.email === userToAdd.email)) {
+        return { success: false, message: 'Ви вже є учасником цієї зустрічі.' };
+    }
+
+    const updatedParticipants = [...targetBooking.participants, userToAdd];
+    const updatedBooking = { ...targetBooking, participants: updatedParticipants };
+
+    const newBookings = bookings.map(b => 
+        b.id === bookingId ? updatedBooking : b
+    );
+    
+    saveBookings(newBookings);
+    return { success: true, booking: updatedBooking };
+};
+
+export const leaveBooking = (bookingId, userToLeave) => {
+    const allBookings = loadBookings();
+    
+    const targetBooking = allBookings.find(b => b.id === bookingId);
+
+    if (!targetBooking) {
+        return { success: false, message: 'Бронювання не знайдено.' };
+    }
+
+    if (!targetBooking.participants.some(p => p.email === userToLeave.email)) {
+        return { success: false, message: 'Ви не є учасником цієї зустрічі.' };
+    }
+    
+    const updatedBookings = allBookings.map(booking => {
+        if (booking.id !== bookingId) {
+            return booking;
+        }
+
+        const updatedParticipants = booking.participants.filter(
+            p => p.email !== userToLeave.email
+        );
+        
+        return {
+            ...booking,
+            participants: updatedParticipants
+        };
+    });
+
+    saveBookings(updatedBookings);
+    return { success: true };
+};

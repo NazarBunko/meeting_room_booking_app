@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import Button from '../UI/Button';
 import BookingModal from './BookingModal';
+import { cancelBooking, joinBooking, leaveBooking } from '../../services/bookingsService';
+import { getCurrentUser } from '../../services/authService';
 
-function BookingTable({ bookings, roomsMap }) {
+function BookingsTable({ bookings, roomsMap, onDataUpdate }) {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [editingBooking, setEditingBooking] = useState(null);
+    const currentUser = getCurrentUser();
 
     const formatTime = (time) => time ? time.substring(0, 5) : 'N/A';
 
@@ -13,9 +16,38 @@ function BookingTable({ bookings, roomsMap }) {
         setIsBookingModalOpen(true);
     };
 
-    const handleSaveSuccess = () => {
+    const handleCancelBooking = (bookingId) => {
+        if (window.confirm("Ви впевнені, що хочете скасувати це бронювання?")) {
+            cancelBooking(bookingId);
+            alert("Бронювання скасовано.");
+            if (onDataUpdate) onDataUpdate();
+        }
+    };
+
+    const handleJoinBooking = (bookingId, isJoin) => {
+        if (!currentUser) {
+            alert("Помилка: не вдалося ідентифікувати користувача.");
+            return;
+        }
+        
+        let result = joinBooking(bookingId, currentUser);
+        if(isJoin){
+            result = joinBooking(bookingId, currentUser);
+        } else {
+            result = leaveBooking(bookingId, currentUser);
+        }
+        
+        if (result.success) {
+            alert(isJoin ? "Ви успішно долучились до зустрічі!" : "Ви успішно вийшли зі зустрічі!");
+            if (onDataUpdate) onDataUpdate();
+        } else {
+            alert(result.message);
+        }
+    };
+
+    const handleCloseModalAndUpdate = () => {
         setIsBookingModalOpen(false);
-        window.location.reload();
+        if (onDataUpdate) onDataUpdate();
     };
     
     const sortedBookings = [...bookings].sort((a, b) => {
@@ -29,9 +61,9 @@ function BookingTable({ bookings, roomsMap }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                     <tr style={{ borderBottom: '2px solid #555', backgroundColor: '#f8f9fa' }}>
-                        <th style={{ padding: '12px 15px' }}>Кімната</th>
+                        <th style={{ padding: '12px 15px', minWidth: '100px'}}>Кімната</th>
                         <th style={{ padding: '12px 15px' }}>Дата</th>
-                        <th style={{ padding: '12px 15px' }}>Час (від-до)</th>
+                        <th style={{ padding: '12px 15px', minWidth: '120px'}}>Час (від-до)</th>
                         <th style={{ padding: '12px 15px' }}>Опис</th>
                         <th style={{ padding: '12px 15px' }}>Учасники</th>
                         <th style={{ padding: '12px 15px' }}>Створено</th>
@@ -39,23 +71,80 @@ function BookingTable({ bookings, roomsMap }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {sortedBookings.map((booking, index) => (
-                        <tr key={booking.id} style={{ borderBottom: index === sortedBookings.length - 1 ? 'none' : '1px solid #eee' }}>
-                            <td style={{ padding: '10px 15px', fontWeight: 'bold' }}>{roomsMap[booking.roomId] || `ID: ${booking.roomId}`}</td>
-                            <td style={{ padding: '10px 15px' }}>{booking.date}</td>
-                            <td style={{ padding: '10px 15px' }}>{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</td>
-                            <td style={{ padding: '10px 15px' }}>{booking.description}</td>
-                            <td style={{ padding: '10px 15px', fontSize: '0.9em', color: '#333' }}>
-                                {booking.participants.map(p => p.name).join(', ')}
-                            </td>
-                            <td style={{ padding: '10px 15px', color: '#888', fontSize: '0.8em' }}>
-                                {new Date(booking.createdAt).toLocaleDateString('uk-UA')}
-                            </td>
-                            <td style={{ padding: '10px 15px' }}>
-                                <Button onClick={() => handleEditBooking(booking)}>Редагувати</Button>
-                            </td>
-                        </tr>
-                    ))}
+                    {sortedBookings.map((booking, index) => {
+                        const isParticipant = currentUser ? booking.participants.some(p => p.email === currentUser.email) : false;
+
+                        return (
+                            <tr key={booking.id} style={{ borderBottom: index === sortedBookings.length - 1 ? 'none' : '1px solid #eee' }}>
+                                <td style={{ padding: '10px 15px', fontWeight: 'bold' }}>{roomsMap[booking.roomId] || `ID: ${booking.roomId}`}</td>
+                                <td style={{ padding: '10px 15px' }}>{booking.date}</td>
+                                <td style={{ padding: '10px 15px' }}>{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</td>
+                                <td style={{ padding: '10px 15px' }}>{booking.description}</td>
+                                <td style={{ padding: '10px 15px', fontSize: '0.9em', color: '#333' }}>
+                                    {booking.participants.map(p => p.name).join(', ')}
+                                </td>
+                                <td style={{ padding: '10px 15px', color: '#888', fontSize: '0.8em' }}>
+                                    {new Date(booking.createdAt).toLocaleDateString('uk-UA')}
+                                </td>
+                                <td style={{ padding: '5px 5px', minWidth: '300px' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                                        
+                                        {currentUser?.role === "Admin" && (
+                                            <>
+                                                <Button style={
+                                                    { flex: 1, 
+                                                    minWidth: '80px', 
+                                                    padding: '5px' }
+                                                    } 
+                                                    onClick={() => handleEditBooking(booking)}>Редагувати</Button>
+                                                <Button style={
+                                                    { flex: 1, 
+                                                    minWidth: '80px', 
+                                                    padding: '5px', 
+                                                    backgroundColor: '#dc3545' }
+                                                    } 
+                                                    onClick={() => handleCancelBooking(booking.id)}>Видалити</Button>
+                                                
+                                                {isParticipant ? (
+                                                    <Button 
+                                                        style={{ width: '100%', backgroundColor: '#a0a0a0ff' }} 
+                                                        onClick={() => handleJoinBooking(booking.id, false)}
+                                                    >
+                                                        Вийти
+                                                    </Button>
+                                                ) : (
+                                                    <Button 
+                                                        style={{ width: '100%', backgroundColor: '#00c79fff' }} 
+                                                        onClick={() => handleJoinBooking(booking.id, true)}
+                                                    >
+                                                        Долучитись
+                                                    </Button>
+                                                )}
+                                            </>
+                                        )}
+                                        
+                                        {currentUser?.role === "User" && (
+                                            isParticipant ? (
+                                                <Button 
+                                                    style={{ width: '100%', backgroundColor: '#a0a0a0ff' }}
+                                                    onClick={() => handleJoinBooking(booking.id, false)}
+                                                >
+                                                    Вийти зі зустрічі
+                                                </Button>
+                                            ) : (
+                                                <Button 
+                                                    style={{ width: '100%', backgroundColor: '#1AB394' }} 
+                                                    onClick={() => handleJoinBooking(booking.id, true)}
+                                                >
+                                                    Долучитись
+                                                </Button>
+                                            )
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
 
@@ -63,11 +152,13 @@ function BookingTable({ bookings, roomsMap }) {
                 isOpen={isBookingModalOpen}
                 onClose={() => setIsBookingModalOpen(false)}
                 initialData={editingBooking}
-                onBookingSuccess={handleSaveSuccess}
-                mode={"Edit"}
+                onBookingSuccess={handleCloseModalAndUpdate}
+                room={{ 
+                    name: roomsMap[editingBooking?.roomId] || 'Завантаження...' 
+                }}
             />
         </div>
     );
 }
 
-export default BookingTable;
+export default BookingsTable;

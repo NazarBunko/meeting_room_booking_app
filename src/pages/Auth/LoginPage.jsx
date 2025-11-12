@@ -23,11 +23,9 @@ function LoginPage() {
     const result = loginUser(formData.email, formData.password );
 
     if (result.success) {
-      setTimeout(() => {
-        setIsLoading(false);
-        alert(`Вхід успішний для: ${formData.email}`);
-        navigate('/rooms', { replace: true });
-      }, 1500); 
+      setIsLoading(false);
+      alert(`Вхід успішний для: ${formData.email}`);
+      navigate('/rooms', { replace: true });
     } else {
       setIsLoading(false);
       alert(result.message);

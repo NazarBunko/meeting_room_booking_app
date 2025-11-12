@@ -6,6 +6,7 @@ import BookingModal from '../../components/Bookings/BookingModal.jsx';
 import { fetchRooms, deleteRoom } from '../../services/roomsService.js';
 import { logoutUser, getCurrentUser } from '../../services/authService.js';
 import { useNavigate } from 'react-router-dom';
+import styles from './RoomListPage.module.css';
 
 function RoomListPage() {
     const [rooms, setRooms] = useState([]);
@@ -25,15 +26,17 @@ function RoomListPage() {
         const user = getCurrentUser();
         setCurrentUser(user);
         
-        setTimeout(() => {
-            const loadedRooms = fetchRooms();
-            setRooms(loadedRooms);
-            setIsLoading(false);
-        }, 500);
+        const loadedRooms = fetchRooms();
+        setRooms(loadedRooms);
+        setIsLoading(false);
     };
 
     useEffect(() => {
-        loadData();
+        const timerId = setTimeout(() => {
+            loadData();
+        }, 500);
+
+        return () => clearTimeout(timerId);
     }, []);
 
     const handleAddRoom = () => {
@@ -79,22 +82,24 @@ function RoomListPage() {
     }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '50px auto', padding: '20px' }}>
+        <div className={styles.container}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div className={styles.header}>
                 
-                <div style={{ marginRight: 'auto' }}>
+                <div className={styles.userInfo}>
                     {currentUser && (
-                        <div style={{ lineHeight: 1.2, padding: '10px 0' }}>
-                            <p style={{ margin: 0, fontWeight: 'bold' }}>{currentUser.name} ({currentUser.role})</p>
-                            <p style={{ margin: 0, fontSize: '0.9em', color: '#888' }}>{currentUser.email}</p>
+                        <div className={styles.userNameEmail}>
+                            <p className={styles.userName}>{currentUser.name} ({currentUser.role})</p>
+                            <p className={styles.userEmail}>{currentUser.email}</p>
                         </div>
                     )}
                 </div>
                 
-                <h2 style={{ flexGrow: 1, textAlign: 'center', margin: '0 20px' }}>Переговорні Кімнати</h2>
+                <h2 className={styles.pageTitle}>Переговорні Кімнати</h2>
                 
-                <Button onClick={handleAddRoom} style={{ width: '150px' }}>Створити кімнату</Button>
+                {currentUser?.role === "Admin"
+                 ? <Button onClick={handleAddRoom} style={{ width: '150px' }}>+ Створити кімнату</Button>
+                 : <div style={{ width: '150px' }}></div>}
             </div>
             
             {rooms.length === 0 ? (
@@ -107,14 +112,14 @@ function RoomListPage() {
                         onEdit={handleEditRoom}
                         onDelete={handleDeleteRoom}
                         onJoin={(id) => navigate(`/rooms/${id}`)}
-                        onBook={() => handleOpenBookingModal(room)}
+                        onBook={handleOpenBookingModal}
                     />
                 ))
             )}
             
-            <div style={{ marginTop: '40px', textAlign: 'center', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={styles.footerActions}>
                 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div className={styles.navButtons}>
                     <Button 
                         onClick={() => navigate('/users')} 
                         style={{ width: '150px', backgroundColor: '#007bff' }}
@@ -125,11 +130,11 @@ function RoomListPage() {
                         onClick={() => navigate('/bookings')} 
                         style={{ width: '150px', backgroundColor: '#1AB394' }}
                     >
-                        Всі Букінги
+                        Всі Бронювання
                     </Button>
                 </div>
 
-                 <Button 
+                <Button 
                     onClick={handleLogout} 
                     style={{ 
                         width: '200px', 

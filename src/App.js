@@ -6,8 +6,7 @@ import RegistrationPage from './pages/Auth/RegistrationPage.jsx';
 import RoomListPage from './pages/Room/RoomListPage.jsx'; 
 import UsersPage from './pages/Info/UsersPage.jsx';
 
-import { getCurrentUserToken } from './services/authService.js'; 
-import RoomDetailsPage from './pages/Room/RoomDetailsPage.jsx';
+import { getCurrentUserToken } from './services/authService.js';
 import BookingListPage from './pages/Booking/BookingListPage.jsx';
 
 const isLoggedIn = () => !!getCurrentUserToken();
@@ -38,7 +37,6 @@ function App() {
         <Route path="/users" element={<ProtectedRoute element={<UsersPage />} />} />
         <Route path="/bookings" element={<ProtectedRoute element={<BookingListPage />} />} />
         <Route path="/rooms" element={<ProtectedRoute element={<RoomListPage />} />} />
-        <Route path="/rooms/:roomId" element={<ProtectedRoute element={<RoomDetailsPage />} />} />
         
         <Route path="*" element={<h1>404: Сторінку не знайдено</h1>} />
 

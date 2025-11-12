@@ -1,0 +1,51 @@
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.userInfo {
+    margin-right: auto;
+}
+
+.userNameEmail {
+    line-height: 1.2;
+    padding: 10px 0;
+}
+
+.userName {
+    margin: 0;
+    font-weight: bold;
+}
+
+.userEmail {
+    margin: 0;
+    font-size: 0.9em;
+    color: #888;
+}
+
+.pageTitle {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0 20px;
+}
+
+.footerActions {
+    margin-top: 40px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navButtons {
+    display: flex;
+    gap: 10px;
+}

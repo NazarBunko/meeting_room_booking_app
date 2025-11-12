@@ -72,10 +72,12 @@ function BookingModal({ isOpen, onClose, room, onBookingSuccess, initialData }) 
             participants: [...prev.participants, newParticipant] 
         }));
         setNewParticipantEmail('');
+        setChanged(true);
         setError('');
     };
 
     const handleRemoveParticipant = (emailToRemove) => {
+        setChanged(true);
         if (currentUser && emailToRemove === currentUser.email) {
             setError('Ви не можете видалити себе із зустрічі.');
             return;
